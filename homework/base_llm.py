@@ -128,7 +128,51 @@ class BaseLLM:
                 for r in self.batched_generate(prompts[idx : idx + micro_batch_size], num_return_sequences, temperature)
             ]
 
-        raise NotImplementedError()
+        #raise NotImplementedError()
+
+        # Set left-padding so sequences align properly for generation
+        self.tokenizer.padding_side = "left"
+
+        formatted_prompts = [self.format_prompt(p) for p in prompts]
+
+        # Tokenize with left-padding and return tensors
+        inputs = self.tokenizer(
+            formatted_prompts,
+            padding=True,
+            return_tensors="pt",
+            return_attention_mask=True
+        ).to(self.device)
+
+        # Determine decoding strategy
+        do_sample = temperature > 0
+        num_return_sequences = num_return_sequences or 1
+
+        with torch.no_grad():
+            outputs = self.model.generate(
+                input_ids=inputs["input_ids"],
+                attention_mask=inputs["attention_mask"],
+                max_new_tokens=50,
+                do_sample=do_sample,
+                temperature=temperature,
+                num_return_sequences=num_return_sequences,
+                eos_token_id=self.tokenizer.eos_token_id,
+                pad_token_id=self.tokenizer.pad_token_id,
+            )
+
+        # Get only the generated tokens (exclude input prompt)
+        input_length = inputs["input_ids"].shape[1]
+        generated_tokens = outputs[:, input_length:]
+
+        decoded_outputs = self.tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
+
+        if num_return_sequences == 1:
+            return decoded_outputs
+        else:
+            # Reshape to list[list[str]]: one list per original prompt
+            return [
+                decoded_outputs[i * num_return_sequences: (i + 1) * num_return_sequences]
+                for i in range(len(prompts))
+            ]
 
     def answer(self, *questions) -> list[float]:
         """
