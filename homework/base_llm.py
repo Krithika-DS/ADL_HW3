@@ -33,6 +33,8 @@ class BaseLLM:
 
     def generate(self, prompt: str) -> str:
         """
+        Sequential generation for a single prompt using SmolLM2.
+
         (Optional) Implement this method first and then implement batched_generate below.
         It is much easier to implement generation without batching.
 
@@ -41,10 +43,6 @@ class BaseLLM:
         - call self.model.generate
         - decode the outputs with self.tokenizer.decode
 
-        """
-        #return self.batched_generate([prompt])[0]
-        """
-        Sequential generation for a single prompt using SmolLM2.
         """
         self.tokenizer.padding_side = "left"  # just in case
         formatted_prompt = self.format_prompt(prompt)
