@@ -1,6 +1,8 @@
 from .base_llm import BaseLLM
 from .data import Dataset, benchmark
 
+from transformers import TrainingArguments, Trainer
+from peft import get_peft_model, LoraConfig, TaskType
 
 def load() -> BaseLLM:
     from pathlib import Path
@@ -49,7 +51,11 @@ def format_example(prompt: str, answer: str) -> dict[str, str]:
     """
     Construct a question / answer pair. Consider rounding the answer to make it easier for the LLM.
     """
-    raise NotImplementedError()
+    #raise NotImplementedError()
+    return {
+        "question": prompt.strip(),
+        "answer": f"<answer>{round(answer, 4)}</answer>",  # rounded for clarity
+    }
 
 
 class TokenizedDataset:
@@ -78,9 +84,53 @@ def train_model(
     output_dir: str,
     **kwargs,
 ):
-    raise NotImplementedError()
-    test_model(output_dir)
+    # raise NotImplementedError()
+    # test_model(output_dir)
+    # Load base model and tokenizer
+    base = BaseLLM()
+    model = base.model
+    tokenizer = base.tokenizer
 
+    # Add LoRA adapter
+    config = LoraConfig(
+        r=8,
+        lora_alpha=32,  # typically 4-5x r
+        target_modules="all-linear",
+        bias="none",
+        task_type=TaskType.CAUSAL_LM,
+    )
+    model = get_peft_model(model, config)
+    model.enable_input_require_grads()
+
+    # Prepare dataset
+    trainset = TokenizedDataset(tokenizer, Dataset("train"), format_example)
+
+    # Training arguments
+    args = TrainingArguments(
+        output_dir=output_dir,
+        logging_dir=output_dir,
+        report_to="tensorboard",
+        per_device_train_batch_size=32,
+        num_train_epochs=5,
+        learning_rate=5e-4,
+        gradient_checkpointing=True,
+        save_strategy="epoch",
+        logging_strategy="steps",
+        logging_steps=10,
+    )
+
+    # Trainer
+    trainer = Trainer(
+        model=model,
+        args=args,
+        train_dataset=trainset,
+        tokenizer=tokenizer,
+    )
+
+    # Train
+    trainer.train()
+    trainer.save_model("homework/sft_model")
+    
 
 def test_model(ckpt_path: str):
     testset = Dataset("valid")
