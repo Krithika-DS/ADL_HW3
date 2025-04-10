@@ -1,6 +1,6 @@
 from .base_llm import BaseLLM
-from .sft import test_model
-from .data import BenchmarkResult
+from .sft import test_model, tokenize
+from .data import BenchmarkResult, Dataset, benchmark
 
 from transformers import Trainer, TrainingArguments
 from peft import get_peft_model, LoraConfig, TaskType, PeftModel
@@ -11,10 +11,6 @@ import torch
 
 
 def load() -> BaseLLM:
-    from pathlib import Path
-
-    from peft import PeftModel
-
     model_name = "rft_model"
     model_path = Path(__file__).parent / model_name
 
@@ -35,26 +31,6 @@ def format_example(preferred: str, rejected: str) -> dict[str, str]:
         "question": f"Which is better? A: {preferred.strip()} B: {rejected.strip()}",
         "answer": "<answer>A</answer>",
     }
-
-
-def tokenize(tokenizer, question: str, answer: str):
-    full_text = f"{question} {answer}{tokenizer.eos_token}"
-
-    tokenizer.padding_side = "right"
-    tokenizer.pad_token = tokenizer.eos_token
-    full = tokenizer(full_text, padding="max_length", truncation=True, max_length=128)
-
-    input_ids = full["input_ids"]
-    question_len = len(tokenizer(question)["input_ids"])
-
-    labels = [-100] * question_len + input_ids[question_len:]
-
-    for i in range(len(labels)):
-        if full["attention_mask"][i] == 0:
-            labels[i] = -100
-
-    full["labels"] = labels
-    return full
 
 
 class RFTDataset(TorchDataset):
@@ -97,7 +73,7 @@ def train_model(
     # Load RFT dataset
     dataset_path = "homework/rft_data.json"
     trainset = RFTDataset(tokenizer, dataset_path, format_example)
-
+    
     args = TrainingArguments(
         output_dir=output_dir,
         logging_dir=output_dir,
@@ -121,7 +97,7 @@ def train_model(
 
     trainer.train()
     trainer.save_model("homework/rft_model")  # or Path(output_dir) / "rft_model"
-    
+
 
 if __name__ == "__main__":
     from fire import Fire
