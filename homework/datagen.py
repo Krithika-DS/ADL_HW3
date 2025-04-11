@@ -7,8 +7,8 @@ def convert_to_prompt_completion_format(dataset: Dataset) -> list[dict]:
     data = []
     for question, answer in dataset:
         data.append({
-            "prompt": question,
-            "completion": f"<answer>{answer}</answer>",
+            "question": question, #prompt
+            "answer": f"<answer>{answer}</answer>", #completion
         })
     return data
 
