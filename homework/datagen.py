@@ -59,6 +59,7 @@ def generate_dataset(output_json: str, oversample: int = 10, temperature: float 
     new_dataset = []
 
     for item in tqdm(dataset, desc="Generating CoT completions"):
+        print(item)
         question = item["question"]
         correct_answer = item["answer"]
 
