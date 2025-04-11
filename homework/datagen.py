@@ -1,6 +1,7 @@
-from .data import Dataset
+from .data import Dataset, is_answer_valid
 import json
 from tqdm import tqdm
+from .cot import CoTModel
 
 def convert_to_prompt_completion_format(dataset: Dataset) -> list[dict]:
     data = []
