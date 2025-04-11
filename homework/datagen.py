@@ -59,9 +59,9 @@ def generate_dataset(output_json: str, oversample: int = 10, temperature: float 
     new_dataset = []
 
     for item in tqdm(dataset, desc="Generating CoT completions"):
-        print(item)
-        question = item["question"]
-        correct_answer = item["answer"]
+        #print(item)
+        question = item[0]
+        correct_answer = item[1]
 
         # Generate multiple completions per question
         completions = model.batched_generate(
