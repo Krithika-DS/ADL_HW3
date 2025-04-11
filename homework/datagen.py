@@ -1,3 +1,7 @@
+from .data import Dataset
+import json
+from tqdm import tqdm
+
 def convert_to_prompt_completion_format(dataset: Dataset) -> list[dict]:
     data = []
     for question, answer in dataset:
@@ -10,9 +14,6 @@ def convert_to_prompt_completion_format(dataset: Dataset) -> list[dict]:
 
 def generate_dataset(output_json: str, oversample: int = 10, temperature: float = 0.6):
     #raise NotImplementedError()
-    import json
-    from .data import Dataset
-    from tqdm import tqdm
 
     train_dataset = Dataset("train")
     formatted_data = convert_to_prompt_completion_format(train_dataset)
