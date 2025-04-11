@@ -1,17 +1,27 @@
+def convert_to_prompt_completion_format(dataset: Dataset) -> list[dict]:
+    data = []
+    for question, answer in dataset:
+        data.append({
+            "prompt": question,
+            "completion": f"<answer>{answer}</answer>",
+        })
+    return data
+
+
 def generate_dataset(output_json: str, oversample: int = 10, temperature: float = 0.6):
     #raise NotImplementedError()
     import json
-    from datasets import load_dataset
+    from .data import Dataset
     from tqdm import tqdm
 
-    # Load your original dataset
-    original_dataset = load_dataset("nateraw/convert-units")["train"]
+    train_dataset = Dataset("train")
+    formatted_data = convert_to_prompt_completion_format(train_dataset)
 
     model = CoTModel()
 
     new_dataset = []
 
-    for item in tqdm(original_dataset, desc="Generating CoT completions"):
+    for item in tqdm(formatted_data, desc="Generating CoT completions"):
         question, correct_answer = item["question"], item["answer"]
 
         # Generate multiple completions
