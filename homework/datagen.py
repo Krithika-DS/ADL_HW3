@@ -50,12 +50,13 @@ from .cot import CoTModel
 #     print(f"Saved {len(new_dataset)} filtered CoT completions to {output_json}")
 
 
-def generate_dataset(output_json: str, oversample: int = 10, temperature: float = 0.6):
+def generate_dataset(output_json: str = "data/rft.json", oversample: int = 10, temperature: float = 0.6):
 
     # Load original dataset
     dataset = Dataset("train")
 
-    model = CoTModel()
+    #model = CoTModel()
+    model = CoTModel("HuggingFaceTB/SmolLM2-1.7B-Instruct")
     new_dataset = []
 
     for item in tqdm(dataset, desc="Generating CoT completions"):
@@ -74,11 +75,16 @@ def generate_dataset(output_json: str, oversample: int = 10, temperature: float 
         for completion in completions:
             parsed_answer = model.parse_answer(completion)
             if is_answer_valid(parsed_answer, correct_answer):
-                new_dataset.append({
-                    "question": question,
-                    "answer": correct_answer,
-                    "completion": completion.strip()
-                })
+                # new_dataset.append({
+                #     "question": question,
+                #     "answer": correct_answer,
+                #     "completion": completion.strip()
+                # })
+                new_dataset.append([
+                    question,
+                    float(correct_answer),
+                    completion.strip()
+                ])
                 break  # Keep only first valid completion
 
     # Save to JSON
