@@ -49,11 +49,23 @@ def load() -> BaseLLM:
 #         return tokenize(self.tokenizer, **formatted)
 
 
-def format_example(prompt: str, reasoning: str) -> dict[str, str]:
+# def format_example(prompt: str, reasoning: str) -> dict[str, str]:
+#     """
+#     Construct a question / reasoning pair.
+#     The reasoning should contain the chain-of-thought and final <answer>...</answer> tag.
+#     """
+#     return {
+#         "question": prompt.strip(),
+#         "answer": reasoning.strip()
+#     }
+
+
+def format_example(example: list) -> dict[str, str]:
     """
-    Construct a question / reasoning pair.
-    The reasoning should contain the chain-of-thought and final <answer>...</answer> tag.
+    Takes a 3-element list: [prompt, float_answer, reasoning_with_chain_and_answer_tag]
+    Returns a dictionary with the formatted 'question' and 'answer' fields.
     """
+    prompt, _, reasoning = example
     return {
         "question": prompt.strip(),
         "answer": reasoning.strip()
